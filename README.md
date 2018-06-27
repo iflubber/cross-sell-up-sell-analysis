@@ -188,8 +188,7 @@ FROM cust\_data;
 
 Sample output:
 
-![](./screenshots/media/image1.tiff){width="6.262088801399825in"
-height="4.147825896762905in"}
+![](./screenshots/media/image1.tiff)
 
 Let’s now analyse the spending capacity and purchase pattern of the
 customers. We will assign each customer a category and find the total
@@ -219,8 +218,7 @@ SORT BY total\_spend DESC;
 
 Sample Output:
 
-![](./screenshots/media/image2.tiff){width="6.263888888888889in"
-height="2.81875in"}
+![](./screenshots/media/image2.tiff)
 
 Now, let’s collate all the categories that the customer is buying along
 with the spends in each category and assign it to the respective
@@ -248,11 +246,9 @@ GROUP BY name;
 
 Sample output:
 
-![](./screenshots/media/image3.tiff){width="6.263888888888889in"
-height="3.3391305774278215in"}
+![](./screenshots/media/image3.tiff)
 
-![](./screenshots/media/image4.tiff){width="6.263888888888889in"
-height="3.6458333333333335in"}
+![](./screenshots/media/image4.tiff)
 
 Now, we can also choose the potential customers who are likely to spend
 more.
@@ -269,5 +265,4 @@ WHERE total\_spent &gt; 100;
 
 Sample output:
 
-![](./screenshots/media/image5.tiff){width="6.263888888888889in"
-height="3.435416666666667in"}
+![](./screenshots/media/image5.tiff)
