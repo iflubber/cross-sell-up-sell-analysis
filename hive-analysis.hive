@@ -1,0 +1,74 @@
+-- create hive table for the downloaded data
+
+CREATE TABLE IF NOT EXISTS customer_data (
+fname string,
+lname string,
+email string,
+photo string,
+state string,
+phone string,
+date string,
+product string,
+amount double,
+prod_code bigint,
+quantity int
+)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+   "separatorChar" = ",",
+   "quoteChar"     = "\""
+)
+STORED AS TEXTFILE
+TBLPROPERTIES ("skip.header.line.count"="1");
+
+LOAD DATA INPATH '/user/cloudera/input/Customer_Cross_sell.csv' OVERWRITE INTO TABLE customer_data;
+
+-- clean up the data
+CREATE TABLE IF NOT EXISTS cust_data AS
+SELECT * FROM customer_data
+WHERE product != '';
+
+-- create view to categorize the products
+CREATE VIEW IF NOT EXISTS prod_category AS
+SELECT DISTINCT(product) AS products, prod_code,
+CASE WHEN product IN ('Almond','Chicken whole','Chocolates HAK','Poptarts','Spice and Herbs','Oranges','Sugar','Chicken','Carrots','Potato chips','Cauliflower','Wheat Bread','Bread','Green grapes','Papaya','Beets','Black grapes','Cookies') THEN 'Groceries'
+	 WHEN product IN ('Yogurt','Butter','Milk') THEN 'Dairy'
+	 WHEN product IN ('Mountain Dew','Coffee ground','Coke') THEN 'Beverages'
+	 WHEN product IN ('T shirt','Leather shoes','Hair net','Pants') THEN 'Clothing'
+	 WHEN product IN ('Playing cards','Ankle bands','Tylenol','Running Shoes','Multivitamins','Fishing net') THEN 'Sports'
+	 WHEN product IN ('CD ROMS','Electric guitar','Drumsticks','Flute') THEN 'Music'
+	 WHEN product IN ('Shaving Gel') THEN 'Grooming'
+	 WHEN product IN ('Stapler pins','Pencils','Pens','Stapler') THEN 'Stationery'
+	 WHEN product IN ('Silver knives','Spoons','Forks') THEN 'Kitchen'
+	 ELSE 'Others'
+END AS category
+FROM cust_data;
+
+-- create view to prepare for analysis
+CREATE VIEW IF NOT EXISTS customer_shopping_pattern AS
+SELECT CONCAT(cd.fname,' ',cd.lname) AS name,
+pc.category category,
+SUM(cd.amount*cd.quantity) AS total_spend
+FROM cust_data cd
+INNER JOIN prod_category pc
+ON cd.prod_code = pc.prod_code
+GROUP BY CONCAT(cd.fname,' ',cd.lname),pc.category
+DISTRIBUTE BY name
+SORT BY total_spend DESC;
+
+-- create final table for analysis
+CREATE TABLE IF NOT EXISTS customer_spend_analysis AS
+SELECT name,
+COLLECT_LIST(category) AS categories,
+COLLECT_LIST(total_spend) AS category_total_spend,
+SUM(total_spend) AS total_spent,
+COLLECT_LIST(category)[0] AS recommended_category
+FROM customer_shopping_pattern
+GROUP BY name;
+
+-- identify potential customers for up-sell
+CREATE TABLE IF NOT EXISTS upsell_potential AS
+SELECT name,recommended_category
+FROM customer_spend_analysis
+WHERE total_spent > 100;
+
